@@ -1,32 +1,80 @@
 toast('开始执行')
+launchApp('京东')
+
 
 let btnIndex = 0 //跳过一些无法完成的任务
 let commodityViewCount = 0 //浏览商品计数
 let cartCount = 0 //加购计数
-const interval = 4000 //任务执行间隔，手机性能差的设置大一些
-const sleepTime = 20000 //有些场景加载得很慢，建议设置大一些
+const interval = 3000 //任务执行间隔，手机性能差的设置大一些
+const sleepTime = 10000 //有些场景加载得很慢，建议设置大一些
 const version = device.release //安卓版本
 let breakTask = true //是否中止任务
 const clickInterval = 2000 //精灵点击间隔
 
 const judge = () => {
-  if (className('android.view.View').textContains('邀请好友助力').exists()) {
+  if (className('android.view.View').textContains('邀').exists()) {
     btnIndex = 1
   }
-  if (className('android.view.View').textContains('每邀1个好友可得').exists()) {
-    btnIndex = 1
+  if (className('android.view.View').textContains('战队').exists()) {
+    btnIndex ++
   }
 }
-
+//随机延时
+function rsleep(s) {
+  while (s--) {
+      sleep(random(900, 1200));
+  }
+}
+//随机划屏
+function rslide(i) {
+  while (i--) {
+      let x1 = random(device.width*0.2, device.width*0.9);
+      let y1 = random(device.height*0.6, device.height*0.9);
+      let x2 = random(device.width*0.2, device.width*0.9);
+      let y2 = random(device.height*0.4, device.height*0.6);
+      swipe(x1, y1, x2, y2, 400);
+      rsleep(1);
+  }
+}
+//随机划屏，反向
+function rslideR(i) {
+  while (i--) {
+      let x1 = random(device.width*0.2, device.width*0.9);
+      let y1 = random(device.height*0.6, device.height*0.9);
+      let x2 = random(device.width*0.2, device.width*0.9);
+      let y2 = random(device.height*0.4, device.height*0.6);
+      swipe(x1, y1, x2, y2, 300);
+      rsleep(1);
+  }
+}
+//返回
+function advback() {
+  for (var i = 0; i < 3; i++) {
+      if (!className("android.widget.ImageView").desc("返回").exists()) {
+          rslideR(1);
+          rsleep(2);
+          continue;
+      }
+      className("android.widget.ImageView").desc("返回").click();
+      rsleep(3);
+      if (className("android.view.View").textContains("做任务领金币").exists()) {
+          return;
+      }
+  }
+  toast("定位不到返回按钮，模拟返回键");
+  back();
+}
+//
 const task = () => {
   if (breakTask) {
     return
   }
+  //从首页自动进入活动
   if (
     className('android.widget.TextView').text('扫啊扫').exists() &&
     className('android.widget.TextView').text('消息').exists()
   ) {
-    //从首页自动进入活动
+    toast('自动进入活动中')
     if (parseInt(version.substring(0, 1)) >= 7) {
       const w1 = className('android.widget.ImageView')
         .descContains('浮层活动')
@@ -74,58 +122,37 @@ const task = () => {
     //任务页
     click('去完成', btnIndex)
   } else if (text('浏览以下5个商品').exists()) {
-    //商品浏览
-    if (commodityViewCount >= 6) {
-      //任务完成
-      commodityViewCount = 0
-      if (idContains('com.jingdong.app.mall:id/fe').exists()) {
-        idContains('com.jingdong.app.mall:id/fe').findOne().click()
-      } else if (idContains('com.jingdong.app.mall:id/fd').exists()) {
-        idContains('com.jingdong.app.mall:id/fd').findOne().click()
-      } else if (idContains('fe').exists()) {
-        idContains('fe').findOne().click()
-      } else if (idContains('fd').exists()) {
-        idContains('fd').findOne().click()
-      } else {
-        back()
+      //商品浏览
+      toast('开始浏览商品')
+        for (let i = 0; i < 5; i++) {
+          var prices = className("android.view.View").textMatches("^¥[0-9]+\.[0-9][0-9]").find();
+          var good = prices[i].parent().parent(); //找到商品
+          //toast('找到'+good.childCount()+'个商品');
+          rsleep(2);
+          click(good.child(0).bounds().centerX(), good.child(0).bounds().centerY())
+          rslide(4)
+          rslideR(3)
+          rsleep(2);
+          back()
+          //rslide(2)
+          rsleep(2);
+          
       }
-    }
-    className('android.view.View')
-      .text('浏览以下5个商品')
-      .findOne()
-      .parent()
-      .parent()
-      .child(1)
-      .child(commodityViewCount)
-      .click()
-    commodityViewCount++
+      advback();
   } else if (text('当前页点击加购以下5个商品').exists()) {
     //加购
-    if (cartCount >= 6) {
-      //任务完成
-      cartCount = 0
-      if (idContains('com.jingdong.app.mall:id/fe').exists()) {
-        idContains('com.jingdong.app.mall:id/fe').findOne().click()
-      } else if (idContains('com.jingdong.app.mall:id/fd').exists()) {
-        idContains('com.jingdong.app.mall:id/fd').findOne().click()
-      } else if (idContains('fe').exists()) {
-        idContains('fe').findOne().click()
-      } else if (idContains('fd').exists()) {
-        idContains('fd').findOne().click()
-      } else {
-        back()
-      }
+    toast('加入购物车中')
+      for (let i = 0; i < 5; i++) {
+        var prices = className("android.view.View").textMatches("^¥[0-9]+\.[0-9][0-9]").find();
+        var good = prices[i].parent().parent(); //找到商品
+        toast('找到'+good.childCount()+'个商品');
+        rsleep(2);
+        good.child(3).click();
+        rslide(1)
+        rsleep(2);
+        
     }
-    className('android.view.View')
-      .text('当前页点击加购以下5个商品')
-      .findOne()
-      .parent()
-      .parent()
-      .child(1)
-      .child(cartCount)
-      .child(2)
-      .click()
-    cartCount++
+    advback();
   } else if (text('购物车').exists() && text('店铺').exists()) {
     //商品页
     sleep(4000)
@@ -154,6 +181,11 @@ const task = () => {
       idContains('pop-start-btn').findOne().click()
       idContains('pop-fail2-btn').waitFor()
       idContains('pop-fail2-btn').findOne().click()
+    }else if (
+      className('android.widget.TextView').text('收取营养液').exists()
+    ) {
+      //种豆得豆
+      back()
     } else if (textContains('玩一玩').exists()) {
       // 玩一玩
       idContains('com.jingdong.app.mall:id/fe').findOne().click()
